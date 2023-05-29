@@ -1,0 +1,280 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    {% for jsfile_name in script_list %}
+        <script src="{{ host }}/{{ jsfile_name }}.js"></script>
+    {% endfor %}
+
+<!-- 篩選列表JS匯入 -->
+    <script type="text/javascript" src="{% static 'bootstrap-datetimepicker-master/sample in bootstrap v3/jquery/jquery-3.2.1.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap-datetimepicker-master/sample in bootstrap v3/bootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap-datetimepicker-master/js/locales/bootstrap-datetimepicker.fr.js' %}"></script>
+    <link type="text/css" href="{% static 'bootstrap-datetimepicker-master/sample in bootstrap v3/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" media="screen">
+    <link type="text/css" href="{% static 'bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css' %}" rel="stylesheet" media="screen">
+
+    <style>
+        #time_selector{
+            visibility: hidden;
+            width: 0px;
+        }
+        
+    </style>
+
+</head>
+<body>
+
+<!-- 圖表元素 -->    
+<div id="Hm_div_total" style="margin-top: 50px">
+    <input type="text" id="Hm_text"/>
+    <button type="submit" id="Hm_button">提交</button>
+    <div id="Hm">
+        <!-- 顯示可視化圖表，注意要加safe，表示解析視圖層傳入的html內容 -->
+        {{ myechart|safe }}
+    </div>
+</div>
+
+<!-- 篩選列表元素 -->
+<div id="Search_ID_total" style="margin-top: 50px">
+    <div>
+        <span>時間</span>
+        <div id="time_div_ID" style="display: inline-block">
+            <select id="time" style="display: inline-block">
+                <option>過去1天</option>
+                <option>過去5天</option>
+                <option>過去10天</option>
+                <option>自選時間段</option>
+            </select>
+            <div id="time_selector" style="display: inline-block">
+                <input size="16" type="text" id="datetimeStart" readonly class="form_datetime"/>
+                --
+                <input size="16" type="text" id="datetimeEnd" readonly class="form_datetime"/>
+            </div>
+        </div>
+        <span>成交變化量</span>
+        <select id="IDFinance">
+            <option></option>
+            <option>增加</option>
+            <option>減少</option>
+            <option>增加/減少5%以上</option>
+            <option>增加/減少10%以上</option>
+            <option>增加/減少20%以上</option>
+        </select>
+        <span>股價漲跌幅</span>
+        <select id="quote_change">
+            <option></option>
+            <option>上漲</option>
+            <option>下跌</option>
+            <option>上漲1%以上</option>
+            <option>上漲2%以上</option>
+            <option>上漲3%以上</option>
+            <option>下跌1%以上</option>
+            <option>下跌2%以上</option>
+            <option>下跌3%以上</option>
+        </select>
+    <button type="submit" id="search_button">
+        查詢
+    </button>
+    </div>
+    <div id="Search_content">
+        <TABLE>
+            <thead>
+            <tr>
+                <td>股票名</td>
+                <td>股票代碼</td>
+            </tr>
+            </thead>
+            <tbody id="Search_content_tbody">
+            <tr>
+                <th>台塑</th>
+                <td>1301</td>
+            </tr>
+            <tr>
+                <th>中鋼</th>
+                <td>2002</td>
+            </tr>
+            <tr>
+                <th>聯電</th>
+                <td>2303</td>
+            </tr>
+            <tr>
+                <th>鴻海</th>
+                <td>2317</td>
+            </tr>
+            <tr>
+                <th>台積電</th>
+                <td>2330</td>
+            </tr>
+            <tr>
+                <th>中華電</th>
+                <td>2412</td>
+            </tr>
+            <tr>
+                <th>聯發科</th>
+                <td>2454</td>
+            </tr>
+            <tr>
+                <th>國泰金</th>
+                <td>2882</td>
+            </tr>
+            <tr>
+                <th>兆豐金</th>
+                <td>2886</td>
+            </tr>
+            <tr>
+                <th>日月光投控</th>
+                <td>3771</td>
+            </tr>
+            </tbody>
+        </TABLE>
+    </div>
+</div>
+
+<!-- 導入圖表function from views -->
+<script>
+    $(document).ready(function () {
+
+        $("#Hm_button").click(function () {
+            $.ajax({
+                url:"/api/Hm/",
+                type:"POST",
+                datatype:"json",
+                data:{
+                    "stock_code":$("#Hm_text").val()
+                },
+                success:function (data) {
+                    console.info(data)
+                    $('#Hm').empty();
+                    $("#Hm").append(data)
+                },
+                error:function () {
+                    console.info("niaho")
+                    alert("沒有該股票")
+                }
+            })
+        });
+        $("#time").change(function () {
+            // 查看究竟哪個存在
+            if ($("#time").val() == "自選時間段")
+            {
+                $("#time_selector").css("visibility","visible");
+                $("#time_selector").css("width","350px");
+            }
+            else{
+                $("#time_selector").css("visibility","hidden");
+                $("#time_selector").css("width","0px");
+            }
+        });
+{#            不是自選時間段#}
+        $("#search_button").click(function () {
+
+            if ($("#time").val() == "自選時間段" && ($("#datetimeStart").val() == "" || $("#datetimeEnd").val() == "")){
+                alert("若您選擇了自選時間段, 請在後面的兩個框同時輸入起始時間和結束時間！！！")
+            }
+            else if($("#time").val() == "自選時間段" && ($("#datetimeEnd").val() == $("#datetimeStart").val())){
+                alert("起始時間和結束時間不能同一天！！！")
+            }
+            else if($("#IDFinance").val() == "" && $("#quote_change").val() == ""){
+                alert("融資增減比例和股價漲跌幅不能同時為空！！！")
+            }
+            else if($("#time").val() != "自選時間段"){
+                 $.ajax({
+                    url:"/api/search_button/",
+                    type:"POST",
+                    datatype:"json",
+                    data:{
+                        "time":$("#time").val(),
+                        "IDFinance":$("#IDFinance").val(),
+                        "quote_change":$("#quote_change").val(),
+                    },
+                    success:function (data) {
+                        console.info(data)
+                         if (data["Data"] != "") {
+                             //返回值 data 在這裡是一個列表
+                             $('#Search_content_tbody').empty();
+                             for (var all_message in data["Data"]) {
+                                 $('#Search_content_tbody').append("        <tr>\n" +
+                                     "<th scope=\"row\">" + data["Data"][all_message]["stock_name"] + "</a></th>\n" +
+                                     "<td>" + data["Data"][all_message]["stock_code"] + "</td>\n" +
+                                     "</tr>")
+                             }
+                         }
+                         else{
+                             alert("沒有相關數據")
+                         }
+                    },
+                    error:function () {
+                        console.info("niaho")
+                        alert("沒有該股票")
+                    }
+               })
+            }
+{#            自選時間段#}
+else{
+                 $.ajax({
+                    url:"/api/search_button/",
+                    type:"POST",
+                    datatype:"json",
+                    data:{
+                        "datetimeStart":$("#datetimeStart").val(),
+                        "datetimeEnd":$("#datetimeEnd").val(),
+                        "IDFinance":$("#IDFinance").val(),
+                        "quote_change":$("#quote_change").val(),
+                    },
+                     success: function (data) {
+                         console.info(data)
+                         if (data["Data"] != "") {
+                             //返回值 data 在這裡是一個列表
+                             $('#Search_content_tbody').empty();
+                             for (var all_message in data["Data"]) {
+                                 $('#Search_content_tbody').append("        <tr>\n" +
+                                     "<th scope=\"row\">" + data["Data"][all_message]["stock_name"] + "</a></th>\n" +
+                                     "<td>" + data["Data"][all_message]["stock_code"] + "</td>\n" +
+                                     "</tr>")
+                             }
+                         }
+                         else{
+                             alert("沒有相關數據")
+                         }
+                     },
+                    error:function () {
+                        console.info("niaho")
+                        alert("沒有該股票")
+                    }
+               })
+            }
+        })
+    })
+</script>
+
+<!-- 導入篩選列表時間段function from views -->
+<script>
+    $("#datetimeStart").datetimepicker({
+        format: 'yyyy-mm-dd',
+        minView:'month',
+        todayBtn : true,
+        language: 'zh-TW',
+        autoclose:true,
+        startDate : '2022 - 7- 4',
+        endDate : '2023 - 4 - 6',
+    }).on("click",function(){
+        $("#datetimeStart").datetimepicker("setEndDate",$("#datetimeEnd").val());
+    });
+    $("#datetimeEnd").datetimepicker({
+        format: 'yyyy-mm-dd',
+        minView:'month',
+        language: 'zh-TW',
+        todayBtn : true,
+        autoclose:true,
+        startDate : '2022 - 7- 4',
+        endDate : '2023 - 4 - 6',
+    }).on("click",function(){
+        $("#datetimeEnd").datetimepicker("setStartDate",$("#datetimeStart").val());
+    });
+</script>
+
+</body>
+</html>
